@@ -1,13 +1,15 @@
-# nlp_etl/pipeline.py
+# nlp_etl/app/pipeline.py
+
+"""Main orchestrator for the NLP ETL pipeline."""
 import time
 import logging
 from pyspark.sql import SparkSession
 from app.logging_setup import setup_logging
-from datasources.hive import DataSourceFactory
-from preprocessing.html_cleaner import PreprocessingFactory
-from chunking.sentence_chunker import ChunkerFactory
+from app.datasources import DataSourceFactory
+from preprocessing import PreprocessingFactory
+from chunking import ChunkerFactory
 from embedding.sentence_embedder import EmbedderFactory
-from targets.hive_target import TargetFactory
+from targets import TargetFactory
 
 class Pipeline:
     def __init__(self, config):
@@ -21,15 +23,16 @@ class Pipeline:
         df = None
         text_column = self.config.data_source_config.text_column
 
-        # Data Source
+        # Data Source Stage
         if self.config.data_source_config:
             start = time.time()
             source = DataSourceFactory.create(self.config.data_source_config)
             df = source.read_data(self.spark)
             df.write.parquet("intermediate/source_output", mode="overwrite")
             self.timing["data_source"] = time.time() - start
+            self.logger.info("Data source stage completed")
 
-        # Preprocessing
+        # Preprocessing Stage
         if self.config.preprocessing_config:
             start = time.time()
             df = self.spark.read.parquet("intermediate/source_output")
@@ -39,8 +42,9 @@ class Pipeline:
             df.show()
             df.write.parquet("intermediate/preprocessing_output", mode="overwrite")
             self.timing["preprocessing"] = time.time() - start
+            self.logger.info("Preprocessing stage completed")
 
-        # Chunking
+        # Chunking Stage
         if self.config.chunking_config:
             start = time.time()
             df = self.spark.read.parquet("intermediate/preprocessing_output")
@@ -50,8 +54,9 @@ class Pipeline:
             df.show()
             df.write.parquet("intermediate/chunking_output", mode="overwrite")
             self.timing["chunking"] = time.time() - start
+            self.logger.info("Chunking stage completed")
 
-        # Embedding
+        # Embedding Stage
         if self.config.embedding_config:
             start = time.time()
             df = self.spark.read.parquet("intermediate/chunking_output")
@@ -66,8 +71,9 @@ class Pipeline:
             df.show()
             df.write.parquet("intermediate/embedding_output", mode="overwrite")
             self.timing["embedding"] = time.time() - start
+            self.logger.info("Embedding stage completed")
 
-        # Targets
+        # Target Stage
         if self.config.target_configs:
             start = time.time()
             df = self.spark.read.parquet("intermediate/embedding_output")
@@ -75,6 +81,7 @@ class Pipeline:
                 target = TargetFactory.create(target_config)
                 target.write_data(df)
             self.timing["targets"] = time.time() - start
+            self.logger.info("Target stage completed")
 
         # Report
         self.logger.info("Execution Time Report:")

@@ -1,8 +1,11 @@
-# nlp_etl/datasources/hive.py
+# nlp_etl/app/datasources/hive.py
+
+"""Hive data source implementation."""
 from pyspark.sql import DataFrame
 from app.datasources.datasource import DataSource
 
 class HiveDataSource(DataSource):
+    """Reads data from Hive tables/queries."""
     def __init__(self, config):
         self.config = config
 
@@ -27,14 +30,15 @@ class HiveDataSource(DataSource):
         # Similar logic for queries
         return df
 
+
 # Factory
-class DataSourceFactory:
+'''class DataSourceFactory:
     @staticmethod
     def create(config):
         if config.source_type == "hive":
             return HiveDataSource(config)
-        '''elif config.source_type == "file":
+        elif config.source_type == "file":
             return FileDataSource(config)
         elif config.source_type == "rdbms":
-            return RDBMSDataSource(config)'''
-        raise ValueError("Unknown source type")
+            return RDBMSDataSource(config)
+        raise ValueError("Unknown source type")'''

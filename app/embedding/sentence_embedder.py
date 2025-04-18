@@ -1,4 +1,6 @@
-# nlp_etl/embedding/sentence_embedder.py
+# nlp_etl/app/embedding/sentence_embedder.py
+
+"""Generates sentence embeddings (mock implementation)."""
 from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import ArrayType, FloatType
 from sentence_transformers import SentenceTransformer
@@ -18,6 +20,8 @@ class SentenceEmbedder(Embedder):
         @pandas_udf(ArrayType(FloatType()))
         def embed_udf(text_series: pd.Series) -> pd.Series:
             # Load the model inside the UDF (once per partition)
+            print("Debugging")
+            print(self.model_name)
             model = SentenceTransformer(self.model_name)
             # Generate embeddings for the entire series
             embeddings = model.encode(text_series.tolist())
